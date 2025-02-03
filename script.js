@@ -1,3 +1,6 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
 // Cấu hình Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyAiR_IOyPcZbGwl9nrNFzPzWdQrxPq5YVA",
@@ -11,19 +14,18 @@ const firebaseConfig = {
 };
 
 // Khởi tạo Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
-// Tham chiếu đến node "sensorData" trong Realtime Database
-const sensorDataRef = database.ref("sensorData");
+// Tham chiếu đến node "sensorData"
+const sensorDataRef = ref(database, "sensorData");
 
 // Lắng nghe sự thay đổi dữ liệu
-sensorDataRef.on("value", (snapshot) => {
+onValue(sensorDataRef, (snapshot) => {
     const sensorDataList = document.getElementById("sensor-data");
-    sensorDataList.innerHTML = ""; // Xóa dữ liệu cũ
+    sensorDataList.innerHTML = "";
 
-    const data = snapshot.val(); // Lấy dữ liệu từ snapshot
-
+    const data = snapshot.val();
     if (data) {
         Object.keys(data).forEach((key) => {
             const listItem = document.createElement("li");
@@ -36,23 +38,3 @@ sensorDataRef.on("value", (snapshot) => {
         sensorDataList.appendChild(listItem);
     }
 });
-
-// Hàm thêm dữ liệu mẫu vào Realtime Database (tùy chọn)
-function addSampleData() {
-    const timestamp = new Date().toISOString();
-    const value = Math.floor(Math.random() * 100); // Giá trị ngẫu nhiên từ 0 đến 100
-
-    sensorDataRef.push({
-        timestamp: timestamp,
-        value: value
-    })
-    .then(() => {
-        console.log("Sample data added successfully!");
-    })
-    .catch((error) => {
-        console.error("Error adding sample data: ", error);
-    });
-}
-
-// Gọi hàm để thêm dữ liệu mẫu (tùy chọn)
-addSampleData();
