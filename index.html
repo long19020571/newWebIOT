@@ -4,70 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sensor Data</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f2f2f2;
-            padding: 20px;
-        }
-        .data-container {
-            background-color: white;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .sensor-data {
-            margin-bottom: 10px;
-        }
-    </style>
 </head>
 <body>
-
     <h1>Sensor Data</h1>
+    <ul id="sensor-data"></ul>
 
-    <div id="sensorData" class="data-container">
-        <div class="sensor-data" id="temperature">Temperature: </div>
-        <div class="sensor-data" id="humidity">Humidity: </div>
-    </div>
-
-    <script>
-        // Initialize Firebase
-        const firebaseConfig = {
-  apiKey: "AIzaSyAiR_IOyPcZbGwl9nrNFzPzWdQrxPq5YVA",
-  authDomain: "newiot-487f5.firebaseapp.com",
-  databaseURL: "https://newiot-487f5-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "newiot-487f5",
-  storageBucket: "newiot-487f5.firebasestorage.app",
-  messagingSenderId: "818446454604",
-  appId: "1:818446454604:web:8182040aafa6cceadac9e9",
-  measurementId: "G-S6ZZ7ZQJ9B"
-};
-        
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore(app);
-
-        // Function to fetch sensor data
-        function getSensorData() {
-            db.collection("sensorData").doc("latest").get().then((doc) => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    document.getElementById("temperature").textContent = "Temperature: " + data.temperature + "°C";
-                    document.getElementById("humidity").textContent = "Humidity: " + data.humidity + "%";
-                } else {
-                    console.log("No such document!");
-                }
-            }).catch((error) => {
-                console.log("Error getting document:", error);
-            });
-        }
-
-        // Call the function to fetch data every 5 seconds
-        setInterval(getSensorData, 5000);
-    </script>
-
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
