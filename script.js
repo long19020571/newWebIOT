@@ -1,3 +1,7 @@
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
 // Cấu hình Firebase (thay thế bằng cấu hình của bạn)
 const firebaseConfig = {
   apiKey: "AIzaSyAiR_IOyPcZbGwl9nrNFzPzWdQrxPq5YVA",
@@ -11,48 +15,40 @@ const firebaseConfig = {
 };
 
 // Khởi tạo Firebase
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+const dataRef = ref(database, 'sensor/data'); // Đường dẫn đến dữ liệu
 
-// Tham chiếu đến node "sensorData" trong Realtime Database
-const sensorDataRef = database.ref("sensorData");
-
-// Lắng nghe sự thay đổi dữ liệu
-sensorDataRef.on("value", (snapshot) => {
-  const sensorDataList = document.getElementById("sensor-data");
-  sensorDataList.innerHTML = ""; // Xóa dữ liệu cũ
-
-  const data = snapshot.val(); // Lấy dữ liệu từ snapshot
-
-  if (data) {
-    Object.keys(data).forEach((key) => {
-      const listItem = document.createElement("li");
-      listItem.textContent = `Timestamp: ${data[key].timestamp}, Value: ${data[key].value}`;
-      sensorDataList.appendChild(listItem);
-    });
-  } else {
-    const listItem = document.createElement("li");
-    listItem.textContent = "No data available";
-    sensorDataList.appendChild(listItem);
-  }
+// Khởi tạo Chart.js
+const ctx = document.getElementById('realtimeChart').getContext('2d');
+const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Giá trị cảm biến',
+            data: [],
+            borderColor: 'blue',
+            borderWidth: 2
+        }]
+    },
+    options: {
+        scales: {
+            x: { display: true },
+            y: { beginAtZero: true }
+        }
+    }
 });
 
-// Hàm thêm dữ liệu mẫu vào Realtime Database (tùy chọn)
-function addSampleData() {
-  const timestamp = new Date().toISOString();
-  const value = Math.floor(Math.random() * 100); // Giá trị ngẫu nhiên từ 0 đến 100
-
-  sensorDataRef.push({
-    timestamp: timestamp,
-    value: value
-  })
-  .then(() => {
-    console.log("Sample data added successfully!");
-  })
-  .catch((error) => {
-    console.error("Error adding sample data: ", error);
-  });
-}
-
-// Gọi hàm để thêm dữ liệu mẫu (tùy chọn)
-// addSampleData();
+// Lắng nghe dữ liệu từ Firebase và cập nhật biểu đồ
+onValue(dataRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        const keys = Object.keys(data);
+        const values = Object.values(data);
+        
+        chart.data.labels = keys;
+        chart.data.datasets[0].data = values;
+        chart.update();
+    }
+});
