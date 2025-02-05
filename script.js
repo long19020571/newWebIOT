@@ -1,54 +1,105 @@
-
+// Import Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-// Cấu hình Firebase (thay thế bằng cấu hình của bạn)
+// 🔥 Cấu hình Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyAiR_IOyPcZbGwl9nrNFzPzWdQrxPq5YVA",
-  authDomain: "newiot-487f5.firebaseapp.com",
-  databaseURL: "https://newiot-487f5-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "newiot-487f5",
-  storageBucket: "newiot-487f5.firebasestorage.app",
-  messagingSenderId: "818446454604",
-  appId: "1:818446454604:web:8182040aafa6cceadac9e9",
-  measurementId: "G-S6ZZ7ZQJ9B"
+    apiKey: "AIzaSyAiR_IOyPcZbGwl9nrNFzPzWdQrxPq5YVA",
+    authDomain: "newiot-487f5.firebaseapp.com",
+    databaseURL: "https://newiot-487f5-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "newiot-487f5",
+    storageBucket: "newiot-487f5.firebasestorage.app",
+    messagingSenderId: "818446454604",
+    appId: "1:8182040aafa6cceadac9e9",
+    measurementId: "G-S6ZZ7ZQJ9B"
 };
 
-// Khởi tạo Firebase
+// ⚡ Khởi tạo Firebase
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
-const dataRef = ref(database, 'sensor/data'); // Đường dẫn đến dữ liệu
+const dataRef = ref(database, 'sensor/data');
 
-// Khởi tạo Chart.js
+// Lưu dữ liệu để xử lý
+let allTimestamps = [];
+let allValues = [];
+const maxPoints = 50; // Giới hạn số điểm hiển thị
+
+// 🖌 Khởi tạo biểu đồ Chart.js
 const ctx = document.getElementById('realtimeChart').getContext('2d');
 const chart = new Chart(ctx, {
     type: 'line',
     data: {
         labels: [],
         datasets: [{
-            label: 'Giá trị cảm biến',
+            label: 'Dữ liệu cảm biến',
             data: [],
             borderColor: 'blue',
-            borderWidth: 2
+            borderWidth: 2,
+            pointRadius: 3,
+            fill: false
         }]
     },
     options: {
+        responsive: true,
         scales: {
-            x: { display: true },
-            y: { beginAtZero: true }
+            x: {
+                title: { display: true, text: 'Thời gian' }
+            },
+            y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Giá trị' }
+            }
         }
     }
 });
 
-// Lắng nghe dữ liệu từ Firebase và cập nhật biểu đồ
+// ⏳ Lắng nghe dữ liệu theo thời gian thực
 onValue(dataRef, (snapshot) => {
     const data = snapshot.val();
     if (data) {
-        const keys = Object.keys(data);
-        const values = Object.values(data);
-        
-        chart.data.labels = keys;
-        chart.data.datasets[0].data = values;
-        chart.update();
+        allTimestamps = Object.keys(data);
+        allValues = Object.values(data);
+        updateChart();
     }
+});
+
+// 📌 Cập nhật biểu đồ dựa trên khoảng thời gian đã chọn
+function updateChart() {
+    const startTime = document.getElementById("startTime").value;
+    const endTime = document.getElementById("endTime").value;
+
+    let filteredTimestamps = [];
+    let filteredValues = [];
+
+    for (let i = 0; i < allTimestamps.length; i++) {
+        if ((!startTime || allTimestamps[i] >= startTime) && (!endTime || allTimestamps[i] <= endTime)) {
+            filteredTimestamps.push(allTimestamps[i]);
+            filteredValues.push(allValues[i]);
+        }
+    }
+
+    // Giới hạn số điểm hiển thị để tránh lag
+    if (filteredTimestamps.length > maxPoints) {
+        const step = Math.ceil(filteredTimestamps.length / maxPoints);
+        filteredTimestamps = filteredTimestamps.filter((_, i) => i % step === 0);
+        filteredValues = filteredValues.filter((_, i) => i % step === 0);
+    }
+
+    chart.data.labels = filteredTimestamps;
+    chart.data.datasets[0].data = filteredValues;
+    chart.update();
+}
+
+// 🎛 Xử lý sự kiện khi chọn thời gian
+document.getElementById("startTime").addEventListener("change", updateChart);
+document.getElementById("endTime").addEventListener("change", updateChart);
+document.getElementById("scrollRange").addEventListener("input", (e) => {
+    const scrollValue = parseInt(e.target.value);
+    const totalPoints = allTimestamps.length;
+    const startIdx = Math.max(0, totalPoints - scrollValue - maxPoints);
+    const endIdx = Math.min(totalPoints, startIdx + maxPoints);
+
+    chart.data.labels = allTimestamps.slice(startIdx, endIdx);
+    chart.data.datasets[0].data = allValues.slice(startIdx, endIdx);
+    chart.update();
 });
