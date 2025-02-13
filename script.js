@@ -22,6 +22,8 @@ const dataRef = ref(database, 'temp');
 let allTimestamps = [];
 let allValues = [];
 const maxPoints = 50; // Giới hạn số điểm hiển thị
+let displayPoints = maxPoints;
+let startIdx = 0;
 
 // 🖌 Khởi tạo biểu đồ Chart.js
 const ctx = document.getElementById('realtimeChart').getContext('2d');
@@ -45,7 +47,7 @@ const chart = new Chart(ctx, {
                 title: { display: true, text: 'Thời gian' }
             },
             y: {
-                beginAtZero: true, // Giữ trục Y bắt đầu từ 0
+                beginAtZero: true,
                 title: { display: true, text: 'Giá trị' }
             }
         }
@@ -58,7 +60,12 @@ onValue(dataRef, (snapshot) => {
     if (data) {
         allTimestamps = Object.keys(data).map(ts => new Date(parseInt(ts)).toLocaleString());
         allValues = Object.values(data).map(value => parseFloat(String(value).replace(/[^0-9.]/g, "")));
-        updateChart();
+        
+        // Chỉ cập nhật nếu dữ liệu mới làm thay đổi tập dữ liệu gốc
+        if (allTimestamps.length > displayPoints) {
+            startIdx = Math.max(0, allTimestamps.length - displayPoints);
+        }
+        updateChartWithScroll();
     }
 });
 
@@ -84,16 +91,20 @@ function updateChart() {
         filteredValues = filteredValues.filter((_, i) => i % step === 0);
     }
 
-    // 🔥 Cập nhật trục Y theo giá trị lớn nhất của tập dữ liệu
-    const maxValue = Math.max(...filteredValues, 0); // Giá trị lớn nhất (luôn ≥ 0)
-    chart.options.scales.y.max = maxValue + 5; // Thêm khoảng trống trên biểu đồ
-
-    // Cập nhật dữ liệu biểu đồ
     chart.data.labels = filteredTimestamps;
     chart.data.datasets[0].data = filteredValues;
+    chart.options.scales.y.max = Math.max(...filteredValues, 10); // Đảm bảo trục Y luôn đủ hiển thị
     chart.update();
 }
 
+// 📌 Cập nhật biểu đồ khi cuộn
+function updateChartWithScroll() {
+    const endIdx = Math.min(startIdx + displayPoints, allTimestamps.length);
+    chart.data.labels = allTimestamps.slice(startIdx, endIdx);
+    chart.data.datasets[0].data = allValues.slice(startIdx, endIdx);
+    chart.options.scales.y.max = Math.max(...allValues.slice(startIdx, endIdx), 10);
+    chart.update();
+}
 
 // 🎛 Xử lý sự kiện khi chọn thời gian
 document.getElementById("startTime").addEventListener("change", updateChart);
@@ -101,16 +112,9 @@ document.getElementById("endTime").addEventListener("change", updateChart);
 document.getElementById("scrollRange").addEventListener("input", (e) => {
     const scrollValue = parseInt(e.target.value);
     const totalPoints = allTimestamps.length;
-    const startIdx = Math.max(0, totalPoints - scrollValue - maxPoints);
-    const endIdx = Math.min(totalPoints, startIdx + maxPoints);
-
-    chart.data.labels = allTimestamps.slice(startIdx, endIdx);
-    chart.data.datasets[0].data = allValues.slice(startIdx, endIdx);
-    chart.update();
+    startIdx = Math.max(0, totalPoints - scrollValue - displayPoints);
+    updateChartWithScroll();
 });
-
-// 📌 Biến lưu số điểm hiển thị (mặc định: 50)
-let displayPoints = maxPoints;
 
 // 🔄 Xử lý sự kiện cuộn chuột trên biểu đồ
 document.getElementById("realtimeChart").addEventListener("wheel", (e) => {
@@ -118,22 +122,9 @@ document.getElementById("realtimeChart").addEventListener("wheel", (e) => {
 
     // Điều chỉnh số điểm hiển thị theo hướng cuộn
     if (e.deltaY < 0) {
-        displayPoints = Math.min(displayPoints + 5, allTimestamps.length); // Cuộn lên: tăng số điểm
+        displayPoints = Math.min(displayPoints + 5, allTimestamps.length);
     } else {
-        displayPoints = Math.max(displayPoints - 5, 10); // Cuộn xuống: giảm số điểm (tối thiểu 10)
+        displayPoints = Math.max(displayPoints - 5, 10);
     }
-
     updateChartWithScroll();
 });
-
-// 📌 Cập nhật biểu đồ khi cuộn
-function updateChartWithScroll() {
-    const totalPoints = allTimestamps.length;
-    const startIdx = Math.max(0, totalPoints - displayPoints);
-    const endIdx = totalPoints;
-
-    chart.data.labels = allTimestamps.slice(startIdx, endIdx);
-    chart.data.datasets[0].data = allValues.slice(startIdx, endIdx);
-    chart.update();
-}
-
