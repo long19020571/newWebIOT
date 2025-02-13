@@ -46,6 +46,7 @@ const chart = new Chart(ctx, {
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false, // 🔥 Tắt tỷ lệ mặc định để vừa màn hình
         scales: {
             x: {
                 title: { display: true, text: 'Thời gian' }
@@ -59,7 +60,7 @@ const chart = new Chart(ctx, {
     }
 });
 
-// ⏳ Lắng nghe dữ liệu mới theo thời gian thực (chỉ cập nhật dữ liệu mới)
+// ⏳ Lắng nghe dữ liệu mới theo thời gian thực
 onChildAdded(dataRef, (snapshot) => {
     const ts = parseInt(snapshot.key);
     const value = parseFloat(String(snapshot.val()).replace(/[^0-9.]/g, ""));
@@ -77,42 +78,14 @@ onChildAdded(dataRef, (snapshot) => {
     }
 });
 
-// 📌 Cập nhật biểu đồ dựa trên khoảng thời gian đã chọn
+// 📌 Cập nhật biểu đồ
 function updateChart() {
-    const startTime = document.getElementById("startTime").value;
-    const endTime = document.getElementById("endTime").value;
-
-    let filteredData = allTimestamps.map((timestamp, i) => ({ timestamp, value: allValues[i] }))
-        .filter(entry => (!startTime || entry.timestamp >= startTime) && (!endTime || entry.timestamp <= endTime));
-
-    let filteredTimestamps = filteredData.map(entry => entry.timestamp);
-    let filteredValues = filteredData.map(entry => entry.value);
-
-    // Giới hạn số điểm hiển thị
-    if (filteredTimestamps.length > maxPoints) {
-        const step = Math.ceil(filteredTimestamps.length / maxPoints);
-        filteredTimestamps = filteredTimestamps.filter((_, i) => i % step === 0);
-        filteredValues = filteredValues.filter((_, i) => i % step === 0);
-    }
-
-    chart.data.labels = filteredTimestamps;
-    chart.data.datasets[0].data = filteredValues;
+    chart.data.labels = allTimestamps;
+    chart.data.datasets[0].data = allValues;
     chart.update();
 }
 
-// 🎛 Xử lý sự kiện khi chọn thời gian
-document.getElementById("startTime").addEventListener("change", updateChart);
-document.getElementById("endTime").addEventListener("change", updateChart);
-
-// 📜 Xử lý cuộn dữ liệu
-document.getElementById("scrollRange").addEventListener("input", (e) => {
-    const scrollValue = parseInt(e.target.value);
-    const totalPoints = allTimestamps.length;
-    const range = Math.min(maxPoints, totalPoints);
-    const startIdx = Math.max(0, totalPoints - scrollValue - range);
-    const endIdx = Math.min(totalPoints, startIdx + range);
-
-    chart.data.labels = allTimestamps.slice(startIdx, endIdx);
-    chart.data.datasets[0].data = allValues.slice(startIdx, endIdx);
-    chart.update();
+// 📱 Điều chỉnh kích thước khi thay đổi màn hình
+window.addEventListener("resize", () => {
+    chart.resize();
 });
