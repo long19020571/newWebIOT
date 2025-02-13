@@ -46,14 +46,13 @@ const chart = new Chart(ctx, {
     },
     options: {
         responsive: true,
-        maintainAspectRatio: false, // 🔥 Tắt tỷ lệ mặc định để vừa màn hình
+        maintainAspectRatio: false, // Cho phép điều chỉnh kích thước tự do
         scales: {
             x: {
                 title: { display: true, text: 'Thời gian' }
             },
             y: {
-                min: 0, 
-                max: 100, 
+                beginAtZero: true, // Giữ trục y bắt đầu từ 0
                 title: { display: true, text: 'Giá trị' }
             }
         }
