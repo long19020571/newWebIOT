@@ -59,6 +59,9 @@ onValue(dataRef, (snapshot) => {
     if (data) {
         allTimestamps = Object.keys(data).map(ts => new Date(parseInt(ts)).toLocaleString());
         allValues = Object.values(data).map(value => parseFloat(String(value).replace(/[^0-9.]/g, "")));
+
+      console.log("🕒 Timestamp đã chuyển đổi:", allTimestamps);
+        console.log("📊 Dữ liệu allValues sau khi xử lý:", allValues);
         updateChart();
     }
 });
