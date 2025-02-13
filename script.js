@@ -16,7 +16,7 @@ const firebaseConfig = {
 // ⚡ Khởi tạo Firebase
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
-const dataRef = ref(database, 'sensor/data');
+const dataRef = ref(database, 'temp');
 
 // Lưu dữ liệu để xử lý
 let allTimestamps = [];
