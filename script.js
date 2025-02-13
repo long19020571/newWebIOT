@@ -59,6 +59,7 @@ onValue(dataRef, (snapshot) => {
     if (data) {
         allTimestamps = Object.keys(data);
         allValues = Object.values(data).filter(v => !isNaN(v)).map(Number);
+      console.log("📊 Dữ liệu allValues sau khi xử lý:", allValues);
         updateChart();
     }
 });
