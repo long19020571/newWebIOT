@@ -1,15 +1,23 @@
 html, body {
     margin: 0;
     padding: 0;
-    height: 100%;
-    overflow: hidden; /* Ẩn scroll */
+    height: 100vh;
+    width: 100vw;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: #f8f9fa;
+    overflow: hidden; /* Chặn cuộn dọc không cần thiết */
 }
 
-canvas {
-    width: 100vw !important;  /* Chiếm toàn bộ chiều rộng màn hình */
-    height: 100vh !important; /* Chiếm toàn bộ chiều cao màn hình */
+.chart-container {
+    width: 90vw; /* Chiếm 90% chiều rộng màn hình */
+    max-height: 90vh; /* Chiếm tối đa 90% chiều cao */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
