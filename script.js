@@ -4,14 +4,13 @@ import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.
 
 // 🔥 Cấu hình Firebase
 const firebaseConfig = {
-    apiKey: "AIzaSyAiR_IOyPcZbGwl9nrNFzPzWdQrxPq5YVA",
-    authDomain: "newiot-487f5.firebaseapp.com",
-    databaseURL: "https://newiot-487f5-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "newiot-487f5",
-    storageBucket: "newiot-487f5.firebasestorage.app",
-    messagingSenderId: "818446454604",
-    appId: "1:8182040aafa6cceadac9e9",
-    measurementId: "G-S6ZZ7ZQJ9B"
+  apiKey: "AIzaSyAJGktb1tH1uCvfHNMP1XDRAuKjb7qr0mY",
+  authDomain: "long4-96478.firebaseapp.com",
+  databaseURL: "https://long4-96478-default-rtdb.firebaseio.com",
+  projectId: "long4-96478",
+  storageBucket: "long4-96478.firebasestorage.app",
+  messagingSenderId: "329904377529",
+  appId: "1:329904377529:web:98a114073f5fef27795568"
 };
 
 // ⚡ Khởi tạo Firebase
