@@ -45,8 +45,7 @@ const chart = new Chart(ctx, {
                 title: { display: true, text: 'Thời gian' }
             },
             y: {
-                min: 0, // Giá trị nhỏ nhất
-                max: 100, // Điều chỉnh theo cảm biến thực tế
+                beginAtZero: true, // Giữ trục Y bắt đầu từ 0
                 title: { display: true, text: 'Giá trị' }
             }
         }
@@ -85,10 +84,16 @@ function updateChart() {
         filteredValues = filteredValues.filter((_, i) => i % step === 0);
     }
 
+    // 🔥 Cập nhật trục Y theo giá trị lớn nhất của tập dữ liệu
+    const maxValue = Math.max(...filteredValues, 0); // Giá trị lớn nhất (luôn ≥ 0)
+    chart.options.scales.y.max = maxValue + 5; // Thêm khoảng trống trên biểu đồ
+
+    // Cập nhật dữ liệu biểu đồ
     chart.data.labels = filteredTimestamps;
     chart.data.datasets[0].data = filteredValues;
     chart.update();
 }
+
 
 // 🎛 Xử lý sự kiện khi chọn thời gian
 document.getElementById("startTime").addEventListener("change", updateChart);
