@@ -6,46 +6,61 @@
     <title>Biểu đồ Cảm Biến (Realtime)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        html, body {
+        * {
             margin: 0;
             padding: 0;
-            height: 100vh;
-            width: 100vw;
+            box-sizing: border-box;
+        }
+        body {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            padding: 10px;
         }
         .controls {
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            flex-wrap: wrap;
             gap: 10px;
-            margin-bottom: 10px;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 10px;
+        }
+        .chart-container {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
         }
         canvas {
-            max-width: 90vw;
+            width: 100% !important;
+            height: 100% !important;
             max-height: 80vh;
+        }
+        .scroll-control {
+            text-align: center;
+            padding: 10px;
         }
     </style>
 </head>
 <body>
-    <h2>📊 Biểu đồ Cảm Biến (Realtime)</h2>
-    
     <div class="controls">
+        <h2>📊 Biểu đồ Cảm Biến (Realtime)</h2>
         <label for="startTime">🔹 Thời gian bắt đầu:</label>
         <input type="datetime-local" id="startTime">
         
         <label for="endTime">🔹 Thời gian kết thúc:</label>
         <input type="datetime-local" id="endTime">
     </div>
-    
-    <div style="width: 90vw; height: 80vh; display: flex; justify-content: center; align-items: center;">
+
+    <div class="chart-container">
         <canvas id="realtimeChart"></canvas>
     </div>
-    
-    <div class="controls">
+
+    <div class="scroll-control">
         <label for="scrollRange">🔄 Cuộn để xem dữ liệu cũ hơn:</label>
         <input type="range" id="scrollRange" min="0" max="100" value="100" step="1">
     </div>
