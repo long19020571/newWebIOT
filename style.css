@@ -1,1 +1,15 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden; /* Ẩn scroll */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+}
 
+canvas {
+    width: 100vw !important;  /* Chiếm toàn bộ chiều rộng màn hình */
+    height: 100vh !important; /* Chiếm toàn bộ chiều cao màn hình */
+}
