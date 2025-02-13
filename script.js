@@ -22,8 +22,6 @@ const dataRef = ref(database, 'temp');
 let allTimestamps = [];
 let allValues = [];
 const maxPoints = 50; // Giới hạn số điểm hiển thị
-let displayPoints = maxPoints;
-let startIdx = 0;
 
 // 🖌 Khởi tạo biểu đồ Chart.js
 const ctx = document.getElementById('realtimeChart').getContext('2d');
@@ -47,7 +45,8 @@ const chart = new Chart(ctx, {
                 title: { display: true, text: 'Thời gian' }
             },
             y: {
-                beginAtZero: true,
+                min: 0, // Giá trị nhỏ nhất
+                max: 100, // Điều chỉnh theo cảm biến thực tế
                 title: { display: true, text: 'Giá trị' }
             }
         }
@@ -60,12 +59,7 @@ onValue(dataRef, (snapshot) => {
     if (data) {
         allTimestamps = Object.keys(data).map(ts => new Date(parseInt(ts)).toLocaleString());
         allValues = Object.values(data).map(value => parseFloat(String(value).replace(/[^0-9.]/g, "")));
-        
-        // Chỉ cập nhật nếu dữ liệu mới làm thay đổi tập dữ liệu gốc
-        if (allTimestamps.length > displayPoints) {
-            startIdx = Math.max(0, allTimestamps.length - displayPoints);
-        }
-        updateChartWithScroll();
+        updateChart();
     }
 });
 
@@ -93,16 +87,6 @@ function updateChart() {
 
     chart.data.labels = filteredTimestamps;
     chart.data.datasets[0].data = filteredValues;
-    chart.options.scales.y.max = Math.max(...filteredValues, 10); // Đảm bảo trục Y luôn đủ hiển thị
-    chart.update();
-}
-
-// 📌 Cập nhật biểu đồ khi cuộn
-function updateChartWithScroll() {
-    const endIdx = Math.min(startIdx + displayPoints, allTimestamps.length);
-    chart.data.labels = allTimestamps.slice(startIdx, endIdx);
-    chart.data.datasets[0].data = allValues.slice(startIdx, endIdx);
-    chart.options.scales.y.max = Math.max(...allValues.slice(startIdx, endIdx), 10);
     chart.update();
 }
 
@@ -112,19 +96,13 @@ document.getElementById("endTime").addEventListener("change", updateChart);
 document.getElementById("scrollRange").addEventListener("input", (e) => {
     const scrollValue = parseInt(e.target.value);
     const totalPoints = allTimestamps.length;
-    startIdx = Math.max(0, totalPoints - scrollValue - displayPoints);
-    updateChartWithScroll();
+    const startIdx = Math.max(0, totalPoints - scrollValue - maxPoints);
+    const endIdx = Math.min(totalPoints, startIdx + maxPoints);
+
+    chart.data.labels = allTimestamps.slice(startIdx, endIdx);
+    chart.data.datasets[0].data = allValues.slice(startIdx, endIdx);
+    chart.update();
 });
-
-// 🔄 Xử lý sự kiện cuộn chuột trên biểu đồ
-document.getElementById("realtimeChart").addEventListener("wheel", (e) => {
-    e.preventDefault(); // Ngăn chặn cuộn trang
-
-    // Điều chỉnh số điểm hiển thị theo hướng cuộn
-    if (e.deltaY < 0) {
-        displayPoints = Math.min(displayPoints + 5, allTimestamps.length);
-    } else {
-        displayPoints = Math.max(displayPoints - 5, 10);
-    }
-    updateChartWithScroll();
+window.addEventListener("resize", () => {
+    chart.resize();
 });
