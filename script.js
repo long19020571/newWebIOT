@@ -58,7 +58,7 @@ onValue(dataRef, (snapshot) => {
     const data = snapshot.val();
     if (data) {
         allTimestamps = Object.keys(data);
-        allValues = Object.values(data);
+        allValues = Object.values(data).filter(v => !isNaN(v)).map(Number);
         updateChart();
     }
 });
