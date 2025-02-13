@@ -1,6 +1,6 @@
 // Import Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
 // 🔥 Cấu hình Firebase
 const firebaseConfig = {
@@ -23,12 +23,6 @@ let allTimestamps = [];
 let allValues = [];
 const maxPoints = 50; // Giới hạn số điểm hiển thị
 
-// 📅 Format thời gian theo múi giờ Việt Nam
-const formatter = new Intl.DateTimeFormat('vi-VN', {
-    timeZone: 'Asia/Ho_Chi_Minh',
-    hour12: false
-});
-
 // 🖌 Khởi tạo biểu đồ Chart.js
 const ctx = document.getElementById('realtimeChart').getContext('2d');
 const chart = new Chart(ctx, {
@@ -46,45 +40,66 @@ const chart = new Chart(ctx, {
     },
     options: {
         responsive: true,
-        maintainAspectRatio: false, // Cho phép điều chỉnh kích thước tự do
         scales: {
             x: {
                 title: { display: true, text: 'Thời gian' }
             },
             y: {
-                beginAtZero: true, // Giữ trục y bắt đầu từ 0
+                min: 0, // Giá trị nhỏ nhất
+                max: 100, // Điều chỉnh theo cảm biến thực tế
                 title: { display: true, text: 'Giá trị' }
             }
         }
     }
 });
 
-// ⏳ Lắng nghe dữ liệu mới theo thời gian thực
-onChildAdded(dataRef, (snapshot) => {
-    const ts = parseInt(snapshot.key);
-    const value = parseFloat(String(snapshot.val()).replace(/[^0-9.]/g, ""));
-
-    if (!isNaN(ts) && !isNaN(value)) {
-        allTimestamps.push(formatter.format(new Date(ts)));
-        allValues.push(value);
-
-        if (allTimestamps.length > maxPoints) {
-            allTimestamps.shift();
-            allValues.shift();
-        }
-
+// ⏳ Lắng nghe dữ liệu theo thời gian thực
+onValue(dataRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        allTimestamps = Object.keys(data).map(ts => new Date(parseInt(ts)).toLocaleString());
+        allValues = Object.values(data).map(value => parseFloat(String(value).replace(/[^0-9.]/g, "")));
         updateChart();
     }
 });
 
-// 📌 Cập nhật biểu đồ
+// 📌 Cập nhật biểu đồ dựa trên khoảng thời gian đã chọn
 function updateChart() {
-    chart.data.labels = allTimestamps;
-    chart.data.datasets[0].data = allValues;
+    const startTime = document.getElementById("startTime").value;
+    const endTime = document.getElementById("endTime").value;
+
+    let filteredTimestamps = [];
+    let filteredValues = [];
+
+    for (let i = 0; i < allTimestamps.length; i++) {
+        if ((!startTime || allTimestamps[i] >= startTime) && (!endTime || allTimestamps[i] <= endTime)) {
+            filteredTimestamps.push(allTimestamps[i]);
+            filteredValues.push(allValues[i]);
+        }
+    }
+
+    // Giới hạn số điểm hiển thị để tránh lag
+    if (filteredTimestamps.length > maxPoints) {
+        const step = Math.ceil(filteredTimestamps.length / maxPoints);
+        filteredTimestamps = filteredTimestamps.filter((_, i) => i % step === 0);
+        filteredValues = filteredValues.filter((_, i) => i % step === 0);
+    }
+
+    chart.data.labels = filteredTimestamps;
+    chart.data.datasets[0].data = filteredValues;
     chart.update();
 }
 
-// 📱 Điều chỉnh kích thước khi thay đổi màn hình
-window.addEventListener("resize", () => {
-    chart.resize();
+// 🎛 Xử lý sự kiện khi chọn thời gian
+document.getElementById("startTime").addEventListener("change", updateChart);
+document.getElementById("endTime").addEventListener("change", updateChart);
+document.getElementById("scrollRange").addEventListener("input", (e) => {
+    const scrollValue = parseInt(e.target.value);
+    const totalPoints = allTimestamps.length;
+    const startIdx = Math.max(0, totalPoints - scrollValue - maxPoints);
+    const endIdx = Math.min(totalPoints, startIdx + maxPoints);
+
+    chart.data.labels = allTimestamps.slice(startIdx, endIdx);
+    chart.data.datasets[0].data = allValues.slice(startIdx, endIdx);
+    chart.update();
 });
