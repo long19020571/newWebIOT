@@ -108,3 +108,32 @@ document.getElementById("scrollRange").addEventListener("input", (e) => {
     chart.data.datasets[0].data = allValues.slice(startIdx, endIdx);
     chart.update();
 });
+
+// 📌 Biến lưu số điểm hiển thị (mặc định: 50)
+let displayPoints = maxPoints;
+
+// 🔄 Xử lý sự kiện cuộn chuột trên biểu đồ
+document.getElementById("realtimeChart").addEventListener("wheel", (e) => {
+    e.preventDefault(); // Ngăn chặn cuộn trang
+
+    // Điều chỉnh số điểm hiển thị theo hướng cuộn
+    if (e.deltaY < 0) {
+        displayPoints = Math.min(displayPoints + 5, allTimestamps.length); // Cuộn lên: tăng số điểm
+    } else {
+        displayPoints = Math.max(displayPoints - 5, 10); // Cuộn xuống: giảm số điểm (tối thiểu 10)
+    }
+
+    updateChartWithScroll();
+});
+
+// 📌 Cập nhật biểu đồ khi cuộn
+function updateChartWithScroll() {
+    const totalPoints = allTimestamps.length;
+    const startIdx = Math.max(0, totalPoints - displayPoints);
+    const endIdx = totalPoints;
+
+    chart.data.labels = allTimestamps.slice(startIdx, endIdx);
+    chart.data.datasets[0].data = allValues.slice(startIdx, endIdx);
+    chart.update();
+}
+
