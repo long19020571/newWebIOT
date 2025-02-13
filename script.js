@@ -1,6 +1,6 @@
 // Import Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
 // 🔥 Cấu hình Firebase
 const firebaseConfig = {
@@ -22,6 +22,12 @@ const dataRef = ref(database, 'temp');
 let allTimestamps = [];
 let allValues = [];
 const maxPoints = 50; // Giới hạn số điểm hiển thị
+
+// 📅 Format thời gian theo múi giờ Việt Nam
+const formatter = new Intl.DateTimeFormat('vi-VN', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    hour12: false
+});
 
 // 🖌 Khởi tạo biểu đồ Chart.js
 const ctx = document.getElementById('realtimeChart').getContext('2d');
@@ -45,23 +51,28 @@ const chart = new Chart(ctx, {
                 title: { display: true, text: 'Thời gian' }
             },
             y: {
-                min: 0, // Giá trị nhỏ nhất
-                max: 100, // Điều chỉnh theo cảm biến thực tế
+                min: 0, 
+                max: 100, 
                 title: { display: true, text: 'Giá trị' }
             }
         }
     }
 });
 
-// ⏳ Lắng nghe dữ liệu theo thời gian thực
-onValue(dataRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        allTimestamps = Object.keys(data).map(ts => new Date(parseInt(ts)).toLocaleString());
-        allValues = Object.values(data).map(value => parseFloat(String(value).replace(/[^0-9.]/g, "")));
+// ⏳ Lắng nghe dữ liệu mới theo thời gian thực (chỉ cập nhật dữ liệu mới)
+onChildAdded(dataRef, (snapshot) => {
+    const ts = parseInt(snapshot.key);
+    const value = parseFloat(String(snapshot.val()).replace(/[^0-9.]/g, ""));
 
-      console.log("🕒 Timestamp đã chuyển đổi:", allTimestamps);
-        console.log("📊 Dữ liệu allValues sau khi xử lý:", allValues);
+    if (!isNaN(ts) && !isNaN(value)) {
+        allTimestamps.push(formatter.format(new Date(ts)));
+        allValues.push(value);
+
+        if (allTimestamps.length > maxPoints) {
+            allTimestamps.shift();
+            allValues.shift();
+        }
+
         updateChart();
     }
 });
@@ -71,17 +82,13 @@ function updateChart() {
     const startTime = document.getElementById("startTime").value;
     const endTime = document.getElementById("endTime").value;
 
-    let filteredTimestamps = [];
-    let filteredValues = [];
+    let filteredData = allTimestamps.map((timestamp, i) => ({ timestamp, value: allValues[i] }))
+        .filter(entry => (!startTime || entry.timestamp >= startTime) && (!endTime || entry.timestamp <= endTime));
 
-    for (let i = 0; i < allTimestamps.length; i++) {
-        if ((!startTime || allTimestamps[i] >= startTime) && (!endTime || allTimestamps[i] <= endTime)) {
-            filteredTimestamps.push(allTimestamps[i]);
-            filteredValues.push(allValues[i]);
-        }
-    }
+    let filteredTimestamps = filteredData.map(entry => entry.timestamp);
+    let filteredValues = filteredData.map(entry => entry.value);
 
-    // Giới hạn số điểm hiển thị để tránh lag
+    // Giới hạn số điểm hiển thị
     if (filteredTimestamps.length > maxPoints) {
         const step = Math.ceil(filteredTimestamps.length / maxPoints);
         filteredTimestamps = filteredTimestamps.filter((_, i) => i % step === 0);
@@ -96,11 +103,14 @@ function updateChart() {
 // 🎛 Xử lý sự kiện khi chọn thời gian
 document.getElementById("startTime").addEventListener("change", updateChart);
 document.getElementById("endTime").addEventListener("change", updateChart);
+
+// 📜 Xử lý cuộn dữ liệu
 document.getElementById("scrollRange").addEventListener("input", (e) => {
     const scrollValue = parseInt(e.target.value);
     const totalPoints = allTimestamps.length;
-    const startIdx = Math.max(0, totalPoints - scrollValue - maxPoints);
-    const endIdx = Math.min(totalPoints, startIdx + maxPoints);
+    const range = Math.min(maxPoints, totalPoints);
+    const startIdx = Math.max(0, totalPoints - scrollValue - range);
+    const endIdx = Math.min(totalPoints, startIdx + range);
 
     chart.data.labels = allTimestamps.slice(startIdx, endIdx);
     chart.data.datasets[0].data = allValues.slice(startIdx, endIdx);
