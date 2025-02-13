@@ -45,7 +45,8 @@ const chart = new Chart(ctx, {
                 title: { display: true, text: 'Thời gian' }
             },
             y: {
-                beginAtZero: true,
+                min: 0, // Giá trị nhỏ nhất
+                max: 100, // Điều chỉnh theo cảm biến thực tế
                 title: { display: true, text: 'Giá trị' }
             }
         }
