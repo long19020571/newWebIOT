@@ -58,7 +58,7 @@ onValue(dataRef, (snapshot) => {
     const data = snapshot.val();
     if (data) {
         allTimestamps = Object.keys(data);
-        allValues = Object.values(data).filter(v => !isNaN(v)).map(Number);
+        allValues = parseFloat(Object.values(data).replace(/[^0-9.]/g, ""));
       console.log("📊 Dữ liệu allValues sau khi xử lý:", data);
         updateChart();
     }
